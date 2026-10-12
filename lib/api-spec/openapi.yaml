@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: chatbot
+    description: AI chat operations
 paths:
   /healthz:
     get:
@@ -24,6 +26,28 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /gemini/chat:
+    post:
+      operationId: streamChatResponse
+      tags: [chatbot]
+      summary: Stream an AI response for a chat history
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatInput"
+      responses:
+        "200":
+          description: Server-sent event stream of assistant response chunks
+          content:
+            text/event-stream: {}
+        "400":
+          description: Invalid chat input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatError"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +57,35 @@ components:
           type: string
       required:
         - status
+    ChatMessageInput:
+      type: object
+      properties:
+        role:
+          type: string
+          enum: [user, assistant]
+        content:
+          type: string
+          minLength: 1
+          maxLength: 12000
+      required:
+        - role
+        - content
+    ChatInput:
+      type: object
+      properties:
+        messages:
+          type: array
+          minItems: 1
+          maxItems: 30
+          items:
+            $ref: "#/components/schemas/ChatMessageInput"
+      required:
+        - messages
+    ChatError:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
 
